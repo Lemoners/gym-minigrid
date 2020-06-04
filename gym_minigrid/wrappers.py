@@ -355,3 +355,68 @@ class DirectionObsWrapper(gym.core.ObservationWrapper):
         slope = np.divide( self.goal_position[1] - self.agent_pos[1] ,  self.goal_position[0] - self.agent_pos[0])
         obs['goal_direction'] = np.arctan( slope ) if self.type == 'angle' else slope
         return obs
+
+
+class TargetGeneration(gym.core.Wrapper):
+    """
+    The target will be adjusted according to the times that the env has been reseted.
+    """
+    def __init__(self, env, n=2):
+        super().__init__(env)
+        self.reset_count = 1
+        self.max_tries = 100
+        self.n = n
+    
+    def reset(self):
+        self.reset_count += 1
+        manhattan_dis = int(min(math.log(self.reset_count, self.n), self.env.height))
+        # print("Manhattan dis ", manhattan_dis)
+
+        if self.env._agent_default_pos is not None:
+            agent_pos = self.env._agent_default_pos
+        else:
+            self.env.place_agent()
+            self.env._agent_default_pos = self.env.agent_pos
+            agent_pos = self.env.agent_pos
+
+        agent_x, agent_y = agent_pos
+
+        possible = []
+        for i in range(0,self.env.width):
+            for j in range(0,self.env.height):
+                dis = abs(i - agent_x) + abs(j - agent_y)
+                if dis == manhattan_dis and self.env.valid_pos([i,j]):
+                    possible.append([i,j])
+
+        if len(possible) > 1:
+            goal_pos = possible[np.random.randint(0,len(possible)-1)]
+            self.env._goal_default_pos = goal_pos
+        elif len(possible) == 1:
+            self.env._goal_default_pos = possible[0]
+        
+        return self.env.reset()
+
+
+class RandomTargetWrapper(gym.core.Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+    
+    def reset(self):
+        while True:
+            x = np.random.randint(1,self.env.width-2)
+            y = np.random.randint(1,self.env.height-2)
+
+            if x != self.env._agent_default_pos[0] and y != self.env._agent_default_pos[1]:
+                self.env._goal_default_pos = [x,y]
+                break
+        return self.env.reset()
+
+class FixtargetWrapper(gym.core.Wrapper):
+    def __init__(self, env, pos=[1,1]):
+        super().__init__(env)
+        self.pos = pos
+
+    def reset(self):
+        self.env._goal_default_pos = self.pos
+        return self.env.reset()
+

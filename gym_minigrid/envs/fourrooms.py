@@ -60,9 +60,10 @@ class FourRoomsEnv(MiniGridEnv):
             self.place_agent()
 
         if self._goal_default_pos is not None:
+            # print("Auto set with", self._goal_default_pos)
             goal = Goal()
-            self.put_obj(goal, *self._goal_default_pos)
             goal.init_pos, goal.cur_pos = self._goal_default_pos
+            self.put_obj(goal, *self._goal_default_pos)
         else:
             self.place_obj(Goal())
 

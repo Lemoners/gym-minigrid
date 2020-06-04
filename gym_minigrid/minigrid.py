@@ -886,6 +886,24 @@ class MiniGridEnv(gym.Env):
             self.np_random.randint(xLow, xHigh),
             self.np_random.randint(yLow, yHigh)
         )
+    
+    def valid_pos(self, pos):
+        """
+        Wether the Goal can be put into this pos.
+        """
+        top = (0, 0)
+
+        size = (self.grid.width, self.grid.height)
+
+        # Don't place the object on top of another object
+        if self.grid.get(*pos) != None:
+            return False
+
+        # Don't place the object where the agent is
+        if np.array_equal(pos, self.agent_pos):
+            return False
+        
+        return True
 
     def place_obj(self,
         obj,
